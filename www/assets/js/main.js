@@ -6,6 +6,9 @@ const MAISON_COUNT = 3;
 const ANIMATION_MIN_ROTATION = 2;
 const ANIMATION_MAX_ROTATION = 4;
 
+
+
+
 const getPositionMaisonByIndex = (idx, len=MAISON_COUNT) => {
     const r = RADIUS_MAISON;                    /** radius */
     const h = 2;                  /** hauteur logo */
@@ -44,17 +47,18 @@ const getPositionMaisonByIndex = (idx, len=MAISON_COUNT) => {
         
         addMouseEvents() {
             const that = this;
-            const eleves = document.querySelectorAll('li.eleve');
-            eleves.forEach(eleve => {
-                eleve.addEventListener("click", function() {
-                    if(eleve.classList.contains('dispatched')) return;
-                    if(document.querySelector('li.eleve.processing')) return;
-                    const m = eleve.dataset.maison;
-                    eleve.classList.add("processing");
-                    //console.log("Maison attendu = ", m);
-                    that.rotateAndAnimateTo(m, eleve);
-                });
+            $('ul').on('click', 'li.eleve', (ev) => {
+                const eleve = ev.target;
+                if(eleve.classList.contains('dispatched')) return;
+                if(document.querySelector('li.eleve.processing')) return;
+                const m = eleve.dataset.maison;
+                eleve.classList.add("processing");
+                //console.log("Maison attendu = ", m);
+                that.rotateAndAnimateTo(m, eleve);
             })
+
+                    
+
             
             /*
             $('li.eleve').click(() => {
@@ -73,8 +77,6 @@ const getPositionMaisonByIndex = (idx, len=MAISON_COUNT) => {
                 const cylinder = new THREE.Mesh( geometry, material );
                 this.scene.add( cylinder );
             })();
-            
-            console.log(MAISON_LIST);
             
             /** creation des mesh/geometries */
             this.wheel = new THREE.Group();
@@ -122,6 +124,7 @@ const getPositionMaisonByIndex = (idx, len=MAISON_COUNT) => {
                 const sqt = t * t;
                 const y = sqt / (alpha * (sqt - t) + 1);
                 anim.push(y * (end-start));
+
             }
             
             //console.log(`genAnim(${start} / ${end} /${stepCount}) : `, anim)
@@ -139,7 +142,7 @@ const getPositionMaisonByIndex = (idx, len=MAISON_COUNT) => {
             /** check err */
             if(!fraterie) { console.error("maison inexistante : ", item); return; }
             /** enable rotation */
-            const angleFraterie = Math.PI * 2 / 3 * (idx - 1);
+            const angleFraterie = Math.PI * 2 / MAISON_LIST.length * (idx - 1);
             // console.log(`rotation vers ${fraterie.slug}  (ry= ${angleFraterie}) `);
             const tAngle = (rotationCount*Math.PI*2) + angleFraterie; 
             const anim = this.generateAnimation(0, tAngle, 180);
@@ -147,18 +150,24 @@ const getPositionMaisonByIndex = (idx, len=MAISON_COUNT) => {
             this.fifoData = {
                 eleve: eleve
             };
+            this.onAnimationStart();
         }
         
         onAnimationStart() {
-            
+            this.clearTexts();
         }
         
         onAnimationEnd() {
             const eleve = this.fifoData.eleve;
+            const maison = eleve.dataset.maison;
+            const nom = `${eleve.dataset.prenom} ${eleve.dataset.nom}`;
 
-            console.log("animation end : ", eleve)
+            // console.log("animation end : ", eleve)
             eleve.classList.add('dispatched');
             eleve.classList.remove('processing');
+            document.dispatchEvent(new Event('updateMageList'));
+            this.annunceHome(nom, maison);
+            
         }
         
         update() {
@@ -173,6 +182,58 @@ const getPositionMaisonByIndex = (idx, len=MAISON_COUNT) => {
                     this.fifoAnim = [];
                 }
             }
+        }
+
+        clearTexts() {
+            const scene = this.scene;
+            const getText = () => scene.getObjectByName( "text", true );
+            
+            while( getText() != undefined ) {
+                const t = scene.getObjectByName( "text", true );
+                scene.remove( t );
+                // console.log("suppression text = ", t)
+            }
+        }
+
+        annunceHome(nom, maison) {
+            /** texte prenom */
+            this.addText(nom, 1, 5, 5, 0xBBA635);
+            /** texte maison */
+            let color = 0xffffff;
+            switch(maison.toLowerCase()) {
+                case 'serdelys':
+                    color = 0x006035;
+                    break;
+                case 'cendrelune':
+                    color = 0x34636F;
+                    break;
+                case 'brisetempete':
+                    color = 0xC95454;
+                    break;
+            }
+            this.addText(maison.toUpperCase(), 0.6, 2, 11.5, color);
+        }
+
+        addText(text, size=1, y=5, z=5, color=0xffffff) {
+            const that = this;
+            const loader = new THREE.FontLoader();
+            loader.load( 'assets/fonts/Almendra.json', function ( font ) {
+
+                const geometry = new THREE.TextGeometry( text , {
+                    font: font,
+                    size: size,
+                    height: .3,
+                    curveSegments: 4
+                } );
+                geometry.center();
+                const material = new THREE.MeshStandardMaterial( {
+                    color: color,
+                } );
+                const mesh = new THREE.Mesh( geometry, material );
+                mesh.name = "text";
+                mesh.position.set(0,y,z);
+                that.scene.add(mesh);
+            } );
         }
         
     }
@@ -201,14 +262,14 @@ const getPositionMaisonByIndex = (idx, len=MAISON_COUNT) => {
             this.createRenderer();
             this.addLights();
             //this.addHelpers();
-            //this.addFog();
+            this.addFog();
             this.update();
             this.loadModules();        
         }
         
         addFog() {
             const color = 0x000000;
-            const density = 0.1;
+            const density = 0.02;
             this.scene.fog = new THREE.FogExp2(color, density);
         }
         
@@ -234,6 +295,7 @@ const getPositionMaisonByIndex = (idx, len=MAISON_COUNT) => {
             // add directional light source
             var directionalLight = new THREE.DirectionalLight(0xffffff);
             directionalLight.position.set(1, 1, 1).normalize();
+            directionalLight.intensity = .8;
             this.scene.add(directionalLight);
             
             /*

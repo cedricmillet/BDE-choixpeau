@@ -94,10 +94,11 @@ header h1 {
     display: flex;
     justify-content: space-between;
     position: relative;
-    cursor: pointer;
+    
 }
-.paper-container ul li:hover {
+.paper-container ul li:not(.dispatched):hover {
     background: rgba(0, 0, 0, .1);
+    cursor: pointer;
 }
 
 

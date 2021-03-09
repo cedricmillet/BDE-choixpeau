@@ -12,6 +12,7 @@
     <script src="assets/js/three.js"></script>
 </head>
 <body>
+    <script src="assets/js/data.js?v=<?php echo uniqid(); ?>"></script>
     <script src="assets/js/main.js?v=<?php echo uniqid(); ?>"></script>
     
     <header>
@@ -26,18 +27,8 @@
         <div class="row">
             <div class="col-4">
                 <div class="paper-container">
-                    <h2>Apprentis mages (62): </h2>
-                    <ul>
-                        <li class="eleve" data-maison="cendrelune">Jean Luc (cendrelune)</li>
-                        <li class="eleve" data-maison="brisetempete">Anne (brisetempete)</li>
-                        <li class="eleve" data-maison="serdelys">Sarah (serdelys)</li>
-                        <li class="eleve" data-maison="serdelys" data-dispatched="serdelys">Sarah (serdelys)</li>
-                        <li class="eleve" data-maison="serdelys">Sarah (serdelys)</li>
-                        <li class="eleve" data-maison="serdelys">Sarah (serdelys)</li>
-                        <li class="eleve" data-maison="serdelys">Sarah (serdelys)</li>
-                        <li class="eleve" data-maison="serdelys">Sarah (serdelys)</li>
-                        <li class="eleve" data-maison="serdelys">Sarah (serdelys)</li>
-                        <li class="eleve" data-maison="serdelys">Sarah (serdelys)</li>
+                    <h2>Apprentis mages <span id="eleves-count"></span>: </h2>
+                    <ul id="eleves">
                     </ul>
 
                     <!--
