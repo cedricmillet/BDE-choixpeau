@@ -72,7 +72,7 @@ const getPositionMaisonByIndex = (idx, len=MAISON_COUNT) => {
             
             /** Plateau central */
             (() => {
-                const geometry = new THREE.CylinderGeometry( RADIUS_PLATEAU, RADIUS_PLATEAU, .2, 100 );
+                const geometry = new THREE.CylinderGeometry( RADIUS_PLATEAU-0.2, RADIUS_PLATEAU, .2, 100 );
                 const material = new THREE.MeshStandardMaterial( {color: 0x957C49, transparent: false, opacity: .95 } );
                 const cylinder = new THREE.Mesh( geometry, material );
                 this.scene.add( cylinder );
