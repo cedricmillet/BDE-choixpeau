@@ -1,9 +1,10 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-    <title>Choixpeau</title>
+    <title>Ceremonie répartition - BDE IMMERSION</title>
     <meta charset="UTF-8" />
-    <meta name="autor" value="github.com/cedricmillet" />
+    <meta name="author" value="github.com/cedricmillet" />
+    <meta name="description" content="Client web développé à l'arrache au dernier moment">
     <!-- CSS -->
     <link href="assets/css/style.css?v=<?php echo uniqid(); ?>" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css?family=Almendra+SC&display=swap" rel="stylesheet">
