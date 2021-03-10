@@ -1,3 +1,12 @@
+<?php
+    session_start();
+    if(!isset($_SESSION['logged'])) {
+        header('location: auth.php');
+        exit('access interdit');
+    }
+?>
+
+
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -31,21 +40,11 @@
                     <h2>Apprentis mages <span id="eleves-count"></span>: </h2>
                     <ul id="eleves">
                     </ul>
-
-                    <!--
-                    <section id="settings-btn">
-                        
-                        <a href="">import</a>
-                        <img src="assets/images/icons/fullscreen.webp" class="fullscreen" />
-                    </section>-->
-
-                </div>
-                
+                </div>                
             </div>
             <div class="col-8">
                 <div id="canvas-tree-container"></div>                
             </div>
-
         </div>
     </main>
 

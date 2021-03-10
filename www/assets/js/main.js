@@ -1,38 +1,37 @@
-const RADIUS_PLATEAU = 9;
-const RADIUS_MAISON = 7;
-const SIZE_MAISON = 4;
-const CAMERA_POSITION = [0,3.5,15];
-const MAISON_COUNT = 3;
-/** NBRE DE TOURS SUR LA ROULETTE */
-const ANIMATION_MIN_ROTATION = 2;
-const ANIMATION_MAX_ROTATION = 2;
-/** DEFINITION DE LA VITESSE DE ROTATION BASEE SUR LE NBRE DE TOURS */
-const FRAME_RATE_PER_DEG = 10;
+    /** 3D */
+    const RADIUS_PLATEAU = 9;
+    const RADIUS_MAISON = 7;
+    const SIZE_MAISON = 4;
+    const CAMERA_POSITION = [0,3.5,15];
+    const MAISON_COUNT = 3;
+    /** ANIM / FRAMERATE... */
+    const ANIMATION_MIN_ROTATION = 1;
+    const ANIMATION_MAX_ROTATION = 1;
+    const ANIMATION_FRAME_PER_ROTATION = 200;
+    const FRAME_RATE = 60;
 
 
 
-const getPositionMaisonByIndex = (idx, len=MAISON_COUNT) => {
-    const r = RADIUS_MAISON;                    /** radius */
-    const h = 2.05;                  /** hauteur logo */
-    const offsetAngle = - Math.PI * 2 / 6 * 0.5;
-    
-    return new THREE.Vector3( 
-        Math.cos(Math.PI * 2 / len * idx + offsetAngle) * r , 
-        h , 
-        Math.sin(Math.PI * 2 / len * idx + offsetAngle) * r 
+    const getPositionMaisonByIndex = (idx, len=MAISON_COUNT) => {
+        const r = RADIUS_MAISON;         /** radius */
+        const h = 2.05;                  /** hauteur logo */
+        const offsetAngle = - Math.PI * 2 / 6 * 0.5;
+
+        return new THREE.Vector3( 
+            Math.cos(Math.PI * 2 / len * idx + offsetAngle) * r , 
+            h , 
+            Math.sin(Math.PI * 2 / len * idx + offsetAngle) * r 
         );
-    }
-    
-    
-    
-    var MAISON_LIST = [
+    }    
+
+    const MAISON_LIST = [
         {slug: 'cendrelune', img: 'assets/images/maisons/cendrelune.png', pos: getPositionMaisonByIndex(0) },
         {slug: 'brisetempete', img: 'assets/images/maisons/brisetempete.png', pos: getPositionMaisonByIndex(1) },
         {slug: 'serdelys', img: 'assets/images/maisons/serdelys.png', pos: getPositionMaisonByIndex(2) },
     ];
-    
-    
-    
+        
+        
+
     const getMaison = (slug) => MAISON_LIST.find(m => m.slug === slug);
     
     class ChoixpeauScene {
@@ -60,15 +59,149 @@ const getPositionMaisonByIndex = (idx, len=MAISON_COUNT) => {
             })
 
                     
-
+            $( "body" ).keydown(function() {
+                that.requestStopSpinning();
+            });
             
             /*
             $('li.eleve').click(() => {
                 const m = $(this).data('maison')
             });*/
         }
+
+        setWheelAngle(angle) {
+            this.wheel.rotation.y = angle;
+            /** rotate childs */
+            this.wheelItems.forEach(m => {
+                m.lookAt(...CAMERA_POSITION);
+            });
+        }
+        /** y = x . 2t */
+        genConstantAnimation(startAngle,endAngle,stepCount) {
+            const anim = new Array(stepCount).fill(1);
+            return anim.map((v,idx) => {
+                const t = idx / stepCount;
+                return (endAngle-startAngle) * t * 2;
+            })
+        }
+        /** y = x . (2.t²) */
+        genEaseInAnimation(startAngle,endAngle,stepCount) {
+            const anim = new Array(stepCount).fill(1);
+            return anim.map((v,idx) => {
+                const t = idx / stepCount;
+                return (endAngle-startAngle) * (2 * Math.pow(t,2));
+                //return (endAngle-startAngle) * (t*t / (2 * (t*t - t) + 1));
+            })
+        }
+        /** y = ... */
+        genEaseOutAnimation(startAngle,endAngle,stepCount) {
+            const anim = new Array(stepCount).fill(1);
+            return anim.map((v,idx) => {
+                const t = idx / stepCount;
+                /* Interpolation polynomiale
+                 *  y=a+b*t+c*t² pour les points {0,1};{1,0};{1.2;-.1};{0.5,0.4} 
+                 * calcul sur https://keisan.casio.com/exec/system/14059932254941
+                 * */
+                const [a,b,c] = [0,-1.405,0.406];
+                const y = -1*(a+b*t+c*Math.pow(t,2));
+                return (endAngle-startAngle) * y;
+
+                //return (endAngle-startAngle) * (-1+(4-2*t)*t);
+            })
+        }
+
+        requestStopSpinning() {
+            this.stoppingRequested = true;
+            console.log("Arret de la roue demandée par l'utilisateur.")
+        }
         
+        // fifoAnim = [];
+        fifoData = null;
+        rotateAndAnimateTo(item, eleve) {
+            const rotationCount=Math.floor(Math.random() * ANIMATION_MAX_ROTATION) + ANIMATION_MIN_ROTATION 
+            const idx = MAISON_LIST.findIndex(m => m.slug === item);
+            const fraterie = MAISON_LIST.find(m => m.slug === item);
+            /** check err */
+            if(!fraterie) { console.error("maison inexistante : ", item); return; }
+            this.fifoData = {
+                eleve: eleve
+            };
+            this.anim = {starting: [], waiting: [], stopping: []};
+            this.stoppingRequested = false;
+
+            /** calcul des animations (acceleration, constante, deceleration) */
+            const targetDegree = Math.PI * 2 / MAISON_LIST.length * (idx - 1);
+            const framesByRotation = ANIMATION_FRAME_PER_ROTATION; /** coeff de vitesse */
+            this.anim.starting = this.genEaseInAnimation(0, rotationCount * Math.PI*2, framesByRotation);
+            this.anim.waiting = this.genConstantAnimation(0, rotationCount * Math.PI*2, framesByRotation );
+            this.anim.stopping = this.genEaseOutAnimation(0, rotationCount * Math.PI*2 + targetDegree, framesByRotation);
+            this.ccWaitingAnim = [...this.anim.waiting]; /* eviter le recalcul à chaque rotation => clone d'une copie temporaire */
+            
+            this.onAnimationStart();
+        }
         
+        onAnimationStart() {
+            this.clearTexts();
+        }
+        
+        onAnimationEnd() {
+            const eleve = this.fifoData.eleve;
+            const maison = eleve.dataset.maison;
+            const nom = `${eleve.dataset.prenom} ${eleve.dataset.nom}`;
+            
+            // console.log("animation end : ", eleve)
+            eleve.classList.add('dispatched');
+            eleve.classList.remove('processing');
+            document.dispatchEvent(new Event('updateMageList'));
+            this.annunceHome(nom, maison);
+        }
+        
+        anim = {starting: [], waiting: [], stopping: []};
+        ccWaitingAnim = [];
+        stoppingRequested = false;
+
+        
+        clock = new THREE.Clock();
+        delta = 0;
+        interval = 1 / FRAME_RATE;  // fps
+        update() {
+            /** limitation du framerate => performance++ */
+            this.delta += this.clock.getDelta();
+            if (this.delta  <= this.interval) return;
+            this.delta = this.delta % this.interval;
+            /** playing animation ? */
+            if(this.anim.stopping.length==0) return;
+
+            switch(true) {
+                case this.anim.starting.length>0:
+                    this.setWheelAngle(this.anim.starting[0]);
+                    this.anim.starting.shift();
+                    if(this.anim.starting.length===0) console.log("starting finished");
+                    break;
+                
+                case this.anim.waiting.length>0:
+                    this.setWheelAngle(this.anim.waiting[0]);
+                    this.anim.waiting.shift();
+                    if(this.anim.waiting.length===0 && !this.stoppingRequested) {
+                        this.anim.waiting = [...this.ccWaitingAnim];
+                        console.log("repopulate waiting anim")
+                    }
+                        
+                    if(this.anim.waiting.length ===0 )console.log("waiting finished");
+                    break;
+                case this.anim.stopping.length>0:
+                    this.setWheelAngle(this.anim.stopping[0]);
+                    this.anim.stopping.shift();
+                    if(this.anim.stopping.length===0) {
+                        console.log("stopping finished");
+                        this.onAnimationEnd();
+                    }
+                    break;
+                default:
+                    /** spinning infinite */
+                    break;
+            }
+        }
         
         createObjects() {
             
@@ -103,91 +236,6 @@ const getPositionMaisonByIndex = (idx, len=MAISON_COUNT) => {
             this.scene.add(this.wheel);
         }
         
-        setWheelAngle(angle) {
-            this.wheel.rotation.y = angle;
-            /** rotate childs */
-            this.wheelItems.forEach(m => {
-                m.lookAt(...CAMERA_POSITION);
-            });
-        }
-        
-        
-        generateAnimation(start, end, stepCount=1500) {
-            if(stepCount<=0) {
-                const rotationCount = (end-start) / 2*Math.PI;
-                const mod = (end-start) % (2 * Math.PI);
-                stepCount = rotationCount * FRAME_RATE_PER_DEG;
-            }
-            /** generate lerped animation */
-            let anim = [];
-            for (let i=1;i<=stepCount;i++) {
-                const t = i/stepCount; /** f°(t) € [0,1] */
-                // return t<.5 ? 2*t*t : -1+(4-2*t)*t;
-                /*  m1/ deux intervalles (x² & 1/x²) */
-                // const lerped= t<=0.5 ? (2*Math.pow(t,2))*y : (2*t*(1-t)+0.5)*y;
-                /** m2/ fonction parametrique alpha=2 */
-                const alpha = 2;
-                const sqt = t * t;
-                const y = sqt / (alpha * (sqt - t) + 1);
-                anim.push(y * (end-start));
-            }
-            
-            //console.log(`genAnim(${start} / ${end} /${stepCount}) : `, anim)
-            return anim;
-        }
-        
-        targetAngle = null;
-        
-        fifoAnim = [];
-        fifoData = null;
-        rotateAndAnimateTo(item, eleve) {
-            const rotationCount=Math.floor(Math.random() * ANIMATION_MAX_ROTATION) + ANIMATION_MIN_ROTATION 
-            const idx = MAISON_LIST.findIndex(m => m.slug === item);
-            const fraterie = MAISON_LIST.find(m => m.slug === item);
-            /** check err */
-            if(!fraterie) { console.error("maison inexistante : ", item); return; }
-            /** enable rotation */
-            const angleFraterie = Math.PI * 2 / MAISON_LIST.length * (idx - 1);
-            // console.log(`rotation vers ${fraterie.slug}  (ry= ${angleFraterie}) `);
-            const tAngle = (rotationCount*Math.PI*2) + angleFraterie; 
-            const anim = this.generateAnimation(0, tAngle, -1); // 180
-            this.fifoAnim = anim;
-            this.fifoData = {
-                eleve: eleve
-            };
-            this.onAnimationStart();
-        }
-        
-        onAnimationStart() {
-            this.clearTexts();
-        }
-        
-        onAnimationEnd() {
-            const eleve = this.fifoData.eleve;
-            const maison = eleve.dataset.maison;
-            const nom = `${eleve.dataset.prenom} ${eleve.dataset.nom}`;
-
-            // console.log("animation end : ", eleve)
-            eleve.classList.add('dispatched');
-            eleve.classList.remove('processing');
-            document.dispatchEvent(new Event('updateMageList'));
-            this.annunceHome(nom, maison);
-            
-        }
-        
-        update() {
-            if(this.fifoAnim.length>0) {
-                this.setWheelAngle(this.fifoAnim[0]);
-                this.fifoAnim.shift();
-                
-                if(this.fifoAnim.length===0) {
-                    this.onAnimationEnd();
-
-                    this.fifoData = null;
-                    this.fifoAnim = [];
-                }
-            }
-        }
 
         clearTexts() {
             const scene = this.scene;
