@@ -3,9 +3,11 @@ const RADIUS_MAISON = 7;
 const SIZE_MAISON = 4;
 const CAMERA_POSITION = [0,3.5,15];
 const MAISON_COUNT = 3;
+/** NBRE DE TOURS SUR LA ROULETTE */
 const ANIMATION_MIN_ROTATION = 2;
-const ANIMATION_MAX_ROTATION = 4;
-
+const ANIMATION_MAX_ROTATION = 2;
+/** DEFINITION DE LA VITESSE DE ROTATION BASEE SUR LE NBRE DE TOURS */
+const FRAME_RATE_PER_DEG = 10;
 
 
 
@@ -111,20 +113,23 @@ const getPositionMaisonByIndex = (idx, len=MAISON_COUNT) => {
         
         
         generateAnimation(start, end, stepCount=1500) {
+            if(stepCount<=0) {
+                const rotationCount = (end-start) / 2*Math.PI;
+                const mod = (end-start) % (2 * Math.PI);
+                stepCount = rotationCount * FRAME_RATE_PER_DEG;
+            }
             /** generate lerped animation */
             let anim = [];
             for (let i=1;i<=stepCount;i++) {
-                const t = i/stepCount; /** [0,1] */
-                // return t<=0.5 ? (2*Math.pow(x,2))*y : (2*x*(1-x)+0.5)*y;
-                /*
-                const lerped= t<.5 ? 2*t*t : -1+(4-2*t)*t;
-                return lerped * y;*/
-                /** fonction parametrique */
+                const t = i/stepCount; /** f°(t) € [0,1] */
+                // return t<.5 ? 2*t*t : -1+(4-2*t)*t;
+                /*  m1/ deux intervalles (x² & 1/x²) */
+                // const lerped= t<=0.5 ? (2*Math.pow(t,2))*y : (2*t*(1-t)+0.5)*y;
+                /** m2/ fonction parametrique alpha=2 */
                 const alpha = 2;
                 const sqt = t * t;
                 const y = sqt / (alpha * (sqt - t) + 1);
                 anim.push(y * (end-start));
-
             }
             
             //console.log(`genAnim(${start} / ${end} /${stepCount}) : `, anim)
@@ -145,7 +150,7 @@ const getPositionMaisonByIndex = (idx, len=MAISON_COUNT) => {
             const angleFraterie = Math.PI * 2 / MAISON_LIST.length * (idx - 1);
             // console.log(`rotation vers ${fraterie.slug}  (ry= ${angleFraterie}) `);
             const tAngle = (rotationCount*Math.PI*2) + angleFraterie; 
-            const anim = this.generateAnimation(0, tAngle, 180);
+            const anim = this.generateAnimation(0, tAngle, -1); // 180
             this.fifoAnim = anim;
             this.fifoData = {
                 eleve: eleve
@@ -188,10 +193,10 @@ const getPositionMaisonByIndex = (idx, len=MAISON_COUNT) => {
             const scene = this.scene;
             const getText = () => scene.getObjectByName( "text", true );
             
-            while( getText() != undefined ) {
-                const t = scene.getObjectByName( "text", true );
+            while( true ) {
+                const t = getText();
+                if(!t) break;
                 scene.remove( t );
-                // console.log("suppression text = ", t)
             }
         }
 
