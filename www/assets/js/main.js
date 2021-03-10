@@ -13,7 +13,7 @@ const FRAME_RATE_PER_DEG = 10;
 
 const getPositionMaisonByIndex = (idx, len=MAISON_COUNT) => {
     const r = RADIUS_MAISON;                    /** radius */
-    const h = 2;                  /** hauteur logo */
+    const h = 2.05;                  /** hauteur logo */
     const offsetAngle = - Math.PI * 2 / 6 * 0.5;
     
     return new THREE.Vector3( 
