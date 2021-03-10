@@ -9,7 +9,7 @@ body {
     background: transparent;
 }
 
-/** grid */
+/** simple alignment grid */
 .row    {   width: 100%;   }
 .row div[class^="col-"] { float:left; display:block }
 .row:after { content: " "; display: table; clear: both; }
@@ -63,10 +63,8 @@ header h1 {
 
 
 .paper-container {
-    
-        position: relative;
-        top: 50vh;
-    
+    position: relative;
+    top: 50vh;
     box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
     width: 80%;
     height: 70vh;
@@ -74,7 +72,6 @@ header h1 {
     transform: translateY(-50%);
     background: url("../images/bg/paper-bg.jpg");
     overflow: hidden;
-
 }
 .paper-container h2 {
     text-align: center;
@@ -130,12 +127,11 @@ li.processing {
     width: 2em;
     height: 2em;
     z-index: 99;
-    animation: hat-rotate 2s infinite;
+    animation: choixpeau-rotate 2s infinite;
     animation-direction:alternate;
-  }
+}
 
-  
-@keyframes hat-rotate {
+@keyframes choixpeau-rotate {
     0% {
       transform: translateY(-50%) rotate(11deg);
     }
@@ -145,7 +141,7 @@ li.processing {
     100% {
       transform: translateY(-50%) rotate (-7deg);
     }
-  }
+}
 
 
 li.dispatched:after {
@@ -160,10 +156,10 @@ li.dispatched:after {
     animation: none;
 }
 
-li[data-maison="brisetempete"].dispatched {  background: rgba(235, 137, 137, 0.2);      }
-li[data-maison="cendrelune"].dispatched { background: rgba(88, 142, 179, 0.2);      }
-li[data-maison="serdelys"].dispatched {  background: rgba(119, 221, 115, 0.2);      }
+li[data-maison="brisetempete"].dispatched   {  background: rgba(235, 137, 137, 0.2);      }
+li[data-maison="cendrelune"].dispatched     {  background: rgba(88, 142, 179, 0.2);       }
+li[data-maison="serdelys"].dispatched       {  background: rgba(119, 221, 115, 0.2);      }
 
-li[data-maison="brisetempete"].dispatched:after {  background-image: url('../images/maisons/brisetempete.png');      }
-li[data-maison="cendrelune"].dispatched:after {  background-image: url('../images/maisons/cendrelune.png');      }
-li[data-maison="serdelys"].dispatched:after {  background-image: url('../images/maisons/serdelys.png');      }
+li[data-maison="brisetempete"].dispatched:after         {  background-image: url('../images/maisons/brisetempete.png');      }
+li[data-maison="cendrelune"].dispatched:after           {  background-image: url('../images/maisons/cendrelune.png');      }
+li[data-maison="serdelys"].dispatched:after             {  background-image: url('../images/maisons/serdelys.png');      }
